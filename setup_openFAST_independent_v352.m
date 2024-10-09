@@ -1,0 +1,201 @@
+clc; clear; close all;
+load designTable.mat
+addpath generate_openfast_input_stable/
+
+%global setting
+simdur = 800; %simulation duration in seconds;
+rng(12345)
+numSeeds = 10;
+seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
+summary_openFast = struct();
+FST_info = struct();
+
+windTry = [10.59]';
+waveTry = 0.01* ones(size(windTry));
+IM = table(windTry,waveTry);
+
+for sitenum = 2 %height(designTable) %loop through sites
+
+    % set the folder name
+    sitename = designTable.Name{sitenum};
+    foldername = ['openfast_blade_analysis_' sitename];
+    mkdir(foldername)
+    
+    % copy the main folder to each running folder and go into site folder
+    copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
+    % copyfile("*bts", foldername)
+    copyfile("IEA-15-240-RWT", [foldername '/IEA-15-240-RWT']);
+    cd(foldername)
+    % delete all the input files if exists
+    ext = {'*.INP','*.fst'}; %,'*.txt'};
+    extensions = cellfun(@(x)dir(fullfile(pwd,x)),ext,'UniformOutput',false);
+    extensions = vertcat(extensions{:});
+    if ~isempty(extensions)
+        delete(extensions.name);
+    end
+
+    % generate the openfast simulation input for the specific site
+    for pairnum=1:numel(IM.waveTry)
+        % set the Vhub, Hs and Tp from the seastate pairs
+        Vhub = IM.windTry(pairnum);
+        Hs   = IM.waveTry(pairnum);
+
+        for nseed=1:numel(seedpool)
+            seed = seedpool(nseed);
+            runIndex = numSeeds*(pairnum-1) + nseed;
+            Tp = 4.3*sqrt(Hs); % Spectral peak period (sec)
+
+            % set the environmental criteria
+            waterdepth = designTable.Depth_m_(sitenum); % waterdepth m
+            wavedir = 0; % wave attack angle (degree)
+            winddir = 0; % wind attack angle (degree)
+
+            % structure properties
+            interface_loc           = designTable.InterfaceElevation(sitenum);
+            diameter_mudline        = designTable.BottomDiameter(sitenum);
+            diameter_interface      = designTable.TopDiameter(sitenum);
+            thickness_mudline       = designTable.BottomThickness(sitenum);
+            thickness_interface     = designTable.TopThickness(sitenum);
+
+            %make empty structures for each simulation input:
+            SubDyn      = struct();
+            HydroDyn    = struct();
+            AeroDyn     = struct();
+            ServoDyn    = struct();
+            ElastoDyn   = struct();
+            InflowWind  = struct();
+            TurbSim     = struct();
+            fst         = struct();
+
+            % file naming
+            site_name               = designTable.Name{sitenum};
+            env_info                = ['_Vhub_' num2str(Vhub) '_Hs_' num2str(Hs)...
+                                       '_Tp_' num2str(Tp) '_depth_' num2str(waterdepth) '_seed_'...
+                                       num2str(seed)];
+            env_info_wind_only      = ['_Vhub_' num2str(Vhub) '_seednum_' num2str(seed)];
+            SubDyn.FileName         = [site_name env_info '.SubDyn.Inp'];
+            HydroDyn.FileName       = [site_name env_info '.HydroDyn.Inp'];
+            AeroDyn.FileName        = [site_name env_info '.AeroDyn.Inp'];
+            ServoDyn.FileName       = [site_name env_info '.ServoDyn.Inp'];
+            ElastoDyn.FileName      = [site_name env_info '.ElastoDyn.Inp'];
+            TurbSim.FileName        = ['Turbsim' ...
+                                       env_info_wind_only '_tasknum_' ...
+                                       num2str(runIndex) '.Turbsim.Inp'];
+            InflowWind.FileName     = [site_name env_info '.Inflow.Inp'];
+            fst.FileName            = [site_name env_info '_tasknum_' num2str(runIndex) '.fst'];
+
+            % setup SubDyn input file
+            SubDyn.Mudline_loc          = waterdepth;
+            SubDyn.Interface_loc        = interface_loc;
+            SubDyn.Thickness_Mudline    = thickness_mudline;
+            SubDyn.Thickness_Interface  = thickness_interface;
+            SubDyn.Diameter_Mudline     = diameter_mudline;
+            SubDyn.Diameter_Interface   = diameter_interface;
+            SubDyn.SSI_File             = ssiFileLookup(site_name);
+            SubDyn.env_info             = env_info;
+            writeSubDyn_v352_stable(SubDyn);
+
+            % setup HydroDyn input file
+            HydroDyn.WaterDepth         = waterdepth;
+            HydroDyn.Transition_Height  = interface_loc;
+            HydroDyn.Diameter           = diameter_mudline;
+            HydroDyn.Thickness          = thickness_mudline;
+            HydroDyn.env_info           = env_info;
+            HydroDyn.WaveMod            = 1; %{0: none=still water, 1: regular (periodic), 1P#: regular with user-specified phase, 2: JONSWAP/Pierson-Moskowitz spectrum (irregular), 3: White noise spectrum (irregular), 4: user-defined spectrum from routine UserWaveSpctrm (irregular), 5: Externally generated wave-elevation time series, 6: Externally generated full wave-kinematics time series [option 6 is invalid for PotMod/=0]}
+            HydroDyn.WaveStMod          = 0; %{0: none=no stretching, 1: vertical stretching, 2: extrapolation stretching, 3: Wheeler stretching}
+            HydroDyn.WaveTMax           = simdur;
+            HydroDyn.WaveDT             = 0.1;
+            HydroDyn.WaveHs             = Hs;
+            HydroDyn.WaveTp             = Tp;
+            HydroDyn.WaveDir            = wavedir;
+            HydroDyn.WaveSeed           = seed;
+            HydroDyn.CurrMod            = 0;
+            HydroDyn.CurrSSV0           = 0;
+            writeHydroDyn_v352_stable(HydroDyn);
+
+            % setup AeroDyn input file
+            AeroDyn.WakeMod   = 0;
+            AeroDyn.AFAeroMod = 1;
+            writeAeroDyn_v352(AeroDyn);
+
+            % setup ServoDyn input file
+            ServoDyn.DLL_FileName = '/Users/macbook/miniconda3/envs/openfast_seastate/lib/libdiscon.dylib';
+            writeServoDyn_v352(ServoDyn);
+
+            % setup ElastoDyn input file
+            ElastoDyn.NacYaw    = 0; % nacelle yaw angle
+            ElastoDyn.BlPitch   = 0; %blade pitch, 90 deg == feathered blade
+            ElastoDyn.RotSpeed  = 0; % initial rotor speed
+            ElastoDyn.Azimuth   = 0;
+            ElastoDyn.GenDOF    = 'True'; % True = idling, False = fixed
+            writeElastoDyn_v352(ElastoDyn);
+
+            % setup Turbsim simulation
+            TurbSim.RandSeed1    = seed;
+            TurbSim.AnalysisTime = simdur;
+            TurbSim.Vhub         = Vhub;
+            writeTurbSim_v352(TurbSim);
+
+            % setup inflowwind input file
+            InflowWind.WindType         = 3;
+            InflowWind.PropagationDir   = winddir;
+            InflowWind.HWindSpeed       = Vhub;
+            InflowWind.FileName_BTS     = [TurbSim.FileName(1:end-4) '.bts'];
+            writeInflowWind_v352(InflowWind);
+
+            % setup the OpenFast .fst file
+            fst.echo        = 'True';
+            fst.env_info    = env_info;
+            fst.Tmax        = simdur; %simulation duration
+            fst.DT          = 0.005; %simulation DT
+            fst.CompElast   = 1; % {1=ElastoDyn; 2=ElastoDyn + BeamDyn for blades}
+            fst.CompInflow  = 1; % {0=still air; 1=InflowWind; 2=external from OpenFOAM}
+            fst.CompAero    = 2; % {0=None; 1=AeroDyn v14; 2=AeroDyn v15}
+            fst.CompServo   = 1; % {0=None; 1=ServoDyn}
+            fst.CompHydro   = 1; % {0=None; 1=HydroDyn}
+            fst.CompSub     = 1; % {0=None; 1=SubDyn; 2=External Platform MCKF}
+            fst.WtrDpth     = waterdepth;% waterdepth in m
+            fst.MSL2SWL     = 0; % Mean Sea Level distance to Still Water Level (positive)
+            fst.EDFile      = ElastoDyn.FileName; % ElastoDyn input file
+            fst.AeroFile    = AeroDyn.FileName; % AeroDyn input file
+            fst.ServoFile   = ServoDyn.FileName;  % ServoDyn input file
+            fst.HydroFile   = HydroDyn.FileName;  % Hydrodyn input file
+            fst.SubFile     = SubDyn.FileName;    % Subdyn input file
+            fst.InflowFile  = InflowWind.FileName; %inflow wind input file
+            fst.FolderName  = foldername;
+            writeFST_v352_stable(fst);
+
+
+            % save all the fst properties in the summary struct
+            summary_openFast(pairnum).sitename   = site_name;
+            summary_openFast(pairnum).Hs         = Hs;
+            summary_openFast(pairnum).Vhub       = Vhub;
+            summary_openFast(pairnum).seed       = seed;
+            summary_openFast(pairnum).SubDyn     = SubDyn;
+            summary_openFast(pairnum).HydroDyn   = HydroDyn;
+            summary_openFast(pairnum).AeroDyn    = AeroDyn;
+            summary_openFast(pairnum).ServoDyn   = ServoDyn;
+            summary_openFast(pairnum).ElastoDyn  = ElastoDyn;
+            summary_openFast(pairnum).InflowWind = InflowWind;
+            summary_openFast(pairnum).TurbSim    = TurbSim;
+            summary_openFast(pairnum).fst        = fst;
+
+            % create .sh file if mod runIndex 1000 == 0 
+            if mod(runIndex,1000) == 0
+                copy_turbsim_sh(1000,runIndex)
+                copy_openfast_sh(1000,runIndex)
+            end
+        end
+    end
+    modrunIndex = mod(runIndex,1000);
+    copy_turbsim_sh(modrunIndex,(runIndex))
+    copy_openfast_sh(modrunIndex,(runIndex))
+    cd ../
+    
+    FST_info(sitenum).SiteName = site_name;
+    FST_info(sitenum).summary = summary_openFast;
+    % go out from site folder to exit the creation
+
+end
+
+save('FST_info.mat', 'FST_info')
