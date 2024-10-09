@@ -9,6 +9,7 @@ numSeeds = 10;
 seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
 summary_openFast = struct();
 FST_info = struct();
+simDT = 0.01; 
 
 windTry = [10.59]';
 waveTry = 0.01* ones(size(windTry));
@@ -147,7 +148,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             fst.echo        = 'True';
             fst.env_info    = env_info;
             fst.Tmax        = simdur; %simulation duration
-            fst.DT          = 0.005; %simulation DT
+            fst.DT          = simDT; %simulation DT
             fst.CompElast   = 1; % {1=ElastoDyn; 2=ElastoDyn + BeamDyn for blades}
             fst.CompInflow  = 1; % {0=still air; 1=InflowWind; 2=external from OpenFOAM}
             fst.CompAero    = 2; % {0=None; 1=AeroDyn v14; 2=AeroDyn v15}
