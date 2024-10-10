@@ -6,10 +6,12 @@ addpath generate_openfast_input_stable/
 simdur = 800; %simulation duration in seconds;
 rng(12345)
 numSeeds = 10;
+simDT = 0.01;
 seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
 summary_openFast = struct();
 FST_info = struct();
 simDT = 0.01; 
+numCores = 12;
 
 for sitenum = 2 %height(designTable) %loop through sites
 
@@ -20,11 +22,11 @@ for sitenum = 2 %height(designTable) %loop through sites
     
     % copy the main folder to each running folder and go into site folder
     copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
-    % copyfile("*bts", foldername)
     copyfile("IEA-15-240-RWT", [foldername '/IEA-15-240-RWT']);
+
     cd(foldername)
     % delete all the input files if exists
-    ext = {'*.INP','*.fst'}; %,'*.txt'};
+    ext = {'*.Inp','*.fst','*.ech','*.txt','*.out','*.sh','*.bts'};
     extensions = cellfun(@(x)dir(fullfile(pwd,x)),ext,'UniformOutput',false);
     extensions = vertcat(extensions{:});
     if ~isempty(extensions)
@@ -42,8 +44,9 @@ for sitenum = 2 %height(designTable) %loop through sites
 
     % generate the openfast simulation input for the specific site
     for pairnum=1:numel(combinationsTable.BladePitch)
+        
         % set the Vhub, Hs and Tp from the seastate pairs
-         Vhub = combinationsTable.Vhub(pairnum);
+        Vhub = combinationsTable.Vhub(pairnum);
         Hs   = combinationsTable.Hs(pairnum);
         BladePitch = combinationsTable.BladePitch(pairnum);
 
@@ -75,7 +78,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             fst         = struct();
 
             % file naming
-             site_name               = designTable.Name{sitenum};
+            site_name               = designTable.Name{sitenum};
             env_info                = ['_Vhub_'      num2str(Vhub) ...
                                        '_BladePitch_' num2str(BladePitch) ... 
                                        '_seed_'      num2str(seed)];
@@ -146,7 +149,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             InflowWind.WindType         = 3;
             InflowWind.PropagationDir   = winddir;
             InflowWind.HWindSpeed       = Vhub;
-            InflowWind.FileName_BTS     = [TurbSim.FileName(1:end-4) '.bts'];
+            InflowWind.FileName_BTS     = ['../all_bts/' TurbSim.FileName(1:end-4) '.bts'];
             writeInflowWind_v352(InflowWind);
 
             % setup the OpenFast .fst file
@@ -157,7 +160,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             fst.CompElast   = 1; % {1=ElastoDyn; 2=ElastoDyn + BeamDyn for blades}
             fst.CompInflow  = 1; % {0=still air; 1=InflowWind; 2=external from OpenFOAM}
             fst.CompAero    = 2; % {0=None; 1=AeroDyn v14; 2=AeroDyn v15}
-            fst.CompServo   = 1; % {0=None; 1=ServoDyn}
+            fst.CompServo   = 0; % {0=None; 1=ServoDyn}
             fst.CompHydro   = 1; % {0=None; 1=HydroDyn}
             fst.CompSub     = 1; % {0=None; 1=SubDyn; 2=External Platform MCKF}
             fst.WtrDpth     = waterdepth;% waterdepth in m
@@ -186,11 +189,6 @@ for sitenum = 2 %height(designTable) %loop through sites
             summary_openFast(pairnum).TurbSim    = TurbSim;
             summary_openFast(pairnum).fst        = fst;
 
-            % create .sh file if mod runIndex 1000 == 0 
-            if mod(runIndex,1000) == 0
-                copy_turbsim_sh(1000,runIndex)
-                copy_openfast_sh(1000,runIndex)
-            end
         end
     end
     prepare_openfast_tasks_array(numCores)
@@ -200,6 +198,11 @@ for sitenum = 2 %height(designTable) %loop through sites
     system('chmod +x *sh')
     movefile("*.Turbsim.Inp", "../all_bts/")
     cd ../
-   
 end
+
+cd all_bts/
+prepare_openfast_tasks_array(numCores)
+cd ../
+
+fprintf('FINISH!!!!')
 
