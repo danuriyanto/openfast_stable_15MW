@@ -203,6 +203,7 @@ end
 cd all_bts/
 prepare_turbsim_tasks_array(numCores)
 copyfile('../submit_jobs_turbsim_array.sh', './');
+system('chmod +x *sh')
 cd ../
 
 fprintf('FINISH!!!!')
