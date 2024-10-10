@@ -192,9 +192,7 @@ for sitenum = 2 %height(designTable) %loop through sites
         end
     end
     prepare_openfast_tasks_array(numCores)
-    prepare_turbsim_tasks_array(numCores)
     copyfile('../submit_jobs_openfast_array.sh', './');
-    copyfile('../submit_jobs_turbsim_array.sh', './');
     system('chmod +x *sh')
     movefile("*.Turbsim.Inp", "../all_bts/")
     cd ../
@@ -207,4 +205,3 @@ system('chmod +x *sh')
 cd ../
 
 fprintf('FINISH!!!!')
-
