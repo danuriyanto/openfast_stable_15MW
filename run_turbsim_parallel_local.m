@@ -1,7 +1,7 @@
 clear; clc;
 
 % List of input files
-dir_files = dir("openfast_blade*");
+dir_files = dir("all_bts/*Inp");
 
 % Number of workers to use (cores)
 numWorkers = 6;  % Adjust based on your system's performance cores
@@ -9,17 +9,13 @@ numWorkers = 6;  % Adjust based on your system's performance cores
 % Start parallel pool
 parpool(numWorkers);
 
-for dirnum=1%:12
-    Files_dir = dir([dir_files(dirnum).name '/*Turbsim.Inp']);
-    inputFiles = {Files_dir.name}';
-
-    cd(dir_files(dirnum).name)
-    % Run TurbSim simulations in parallel
-    parfor i = 1:length(inputFiles)
-        runTurbSim(inputFiles{i});
-    end
-    cd ../
+cd(dir_files(1).folder)
+% Run TurbSim simulations in parallel
+inputFiles = ({dir_files.name})';
+parfor i = 1:length(inputFiles)
+    runTurbSim(inputFiles{i});
 end
+cd ../
 % Shut down parallel pool
 delete(gcp('nocreate'));
 

@@ -23,8 +23,6 @@ for sitenum = 2 %height(designTable) %loop through sites
     mkdir(foldername)
     
     % copy the main folder to each running folder and go into site folder
-    copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
-    % copyfile("*bts", foldername)
     copyfile("IEA-15-240-RWT", [foldername '/IEA-15-240-RWT']);
     cd(foldername)
     % delete all the input files if exists
@@ -120,7 +118,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             writeAeroDyn_v352(AeroDyn);
 
             % setup ServoDyn input file
-            ServoDyn.DLL_FileName = '/Users/macbook/miniconda3/envs/openfast_seastate/lib/libdiscon.dylib';
+            ServoDyn.DLL_FileName = 'IEA-15-240-RWT/libdiscon.so';
             writeServoDyn_v352(ServoDyn);
 
             % setup ElastoDyn input file

@@ -5,8 +5,7 @@ addpath generate_openfast_input_stable/
 %global setting
 simdur = 800; %simulation duration in seconds;
 rng(12345)
-numSeeds = 10;
-simDT = 0.01;
+numSeeds = 1;
 seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
 summary_openFast = struct();
 FST_info = struct();
@@ -21,7 +20,7 @@ for sitenum = 2 %height(designTable) %loop through sites
     mkdir(foldername)
     
     % copy the main folder to each running folder and go into site folder
-    copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
+    % copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
     copyfile("IEA-15-240-RWT", [foldername '/IEA-15-240-RWT']);
 
     cd(foldername)
@@ -33,8 +32,8 @@ for sitenum = 2 %height(designTable) %loop through sites
         delete(extensions.name);
     end
 
-    bladepitch_array = [5 6 7];
-    Vhub_array       = [9 10 11];
+    bladepitch_array = [90];
+    Vhub_array       = [10.59];
     Hs_array         = ones(size(Vhub_array)) * 0.01;
 
     [BP, VH, HS] = ndgrid(bladepitch_array, Vhub_array, Hs_array);
@@ -160,7 +159,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             fst.CompElast   = 1; % {1=ElastoDyn; 2=ElastoDyn + BeamDyn for blades}
             fst.CompInflow  = 1; % {0=still air; 1=InflowWind; 2=external from OpenFOAM}
             fst.CompAero    = 2; % {0=None; 1=AeroDyn v14; 2=AeroDyn v15}
-            fst.CompServo   = 0; % {0=None; 1=ServoDyn}
+            fst.CompServo   = 1; % {0=None; 1=ServoDyn}
             fst.CompHydro   = 1; % {0=None; 1=HydroDyn}
             fst.CompSub     = 1; % {0=None; 1=SubDyn; 2=External Platform MCKF}
             fst.WtrDpth     = waterdepth;% waterdepth in m
