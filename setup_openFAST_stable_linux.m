@@ -6,7 +6,7 @@ addpath generate_openfast_input_stable/
 simdur = 800; %simulation duration in seconds;
 rng(12345)
 numSeeds = 1;
-seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
+seedpool = randi([0,1000000],numSeeds,1); 
 summary_openFast = struct();
 FST_info = struct();
 simDT = 0.01; 
@@ -32,13 +32,12 @@ for sitenum = 2 %height(designTable) %loop through sites
         delete(extensions.name);
     end
 
-    bladepitch_array = [90];
     Vhub_array       = [10.59];
     Hs_array         = ones(size(Vhub_array)) * 0.01;
 
-    [BP, VH, HS] = ndgrid(bladepitch_array, Vhub_array, Hs_array);
+    [BP, VH, HS] = ndgrid(Vhub_array, Hs_array);
     combinations = [BP(:), VH(:), HS(:)];
-    combinationsTable = array2table(combinations, 'VariableNames', {'BladePitch', 'Vhub', 'Hs'});
+    combinationsTable = array2table(combinations, 'VariableNames', {'Vhub', 'Hs'});
 
 
     % generate the openfast simulation input for the specific site
@@ -79,7 +78,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             % file naming
             site_name               = designTable.Name{sitenum};
             env_info                = ['_Vhub_'      num2str(Vhub) ...
-                                       '_BladePitch_' num2str(BladePitch) ... 
+                                       '_Hs_'        num2str(Hs) ... 
                                        '_seed_'      num2str(seed)];
             env_info_wind_only      = ['_Vhub_' num2str(Vhub) '_seednum_' num2str(seed)];
             SubDyn.FileName         = [site_name env_info '.SubDyn.Inp'];
@@ -127,12 +126,12 @@ for sitenum = 2 %height(designTable) %loop through sites
             writeAeroDyn_v352(AeroDyn);
 
             % setup ServoDyn input file
-            ServoDyn.DLL_FileName = '/Users/macbook/miniconda3/envs/openfast_seastate/lib/libdiscon.dylib';
+            ServoDyn.DLL_FileName = 'IEA-15-240-RWT/libdiscon.so';
             writeServoDyn_v352(ServoDyn);
 
             % setup ElastoDyn input file
             ElastoDyn.NacYaw    = 0; % nacelle yaw angle
-            ElastoDyn.BlPitch   = BladePitch; %blade pitch, 90 deg == feathered blade
+            ElastoDyn.BlPitch   = 0; %blade pitch, 90 deg == feathered blade
             ElastoDyn.RotSpeed  = 0; % initial rotor speed
             ElastoDyn.Azimuth   = 0;
             ElastoDyn.GenDOF    = 'True'; % True = idling, False = fixed

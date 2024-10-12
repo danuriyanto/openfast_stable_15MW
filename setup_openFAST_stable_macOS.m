@@ -5,15 +5,12 @@ addpath generate_openfast_input_stable/
 %global setting
 simdur = 800; %simulation duration in seconds;
 rng(12345)
-numSeeds = 10;
+numSeeds = 1;
 seedpool = randi([0,1000000],numSeeds,1); %Only need random seeds for winds to repeat 1x. No need for different wind magnitudes to have different seeds
 summary_openFast = struct();
 FST_info = struct();
 simDT = 0.01; 
-
-windTry = [10.59]';
-waveTry = 0.01* ones(size(windTry));
-IM = table(windTry,waveTry);
+numCores = 12;
 
 for sitenum = 2 %height(designTable) %loop through sites
 
@@ -23,21 +20,34 @@ for sitenum = 2 %height(designTable) %loop through sites
     mkdir(foldername)
     
     % copy the main folder to each running folder and go into site folder
+    % copyfile("IEA-15-240-RWT-Monopile_DISCON.IN", foldername)
     copyfile("IEA-15-240-RWT", [foldername '/IEA-15-240-RWT']);
+
     cd(foldername)
     % delete all the input files if exists
-    ext = {'*.INP','*.fst'}; %,'*.txt'};
+    ext = {'*.Inp','*.fst','*.ech','*.txt','*.out','*.sh','*.bts'};
     extensions = cellfun(@(x)dir(fullfile(pwd,x)),ext,'UniformOutput',false);
     extensions = vertcat(extensions{:});
     if ~isempty(extensions)
         delete(extensions.name);
     end
 
+    % combination
+    Vhub_array       = [10.59];
+    Hs_array         = ones(size(Vhub_array)) * 0.01;
+
+    [BP, VH, HS] = ndgrid(Vhub_array, Hs_array);
+    combinations = [BP(:), VH(:), HS(:)];
+    combinationsTable = array2table(combinations, 'VariableNames', {'Vhub', 'Hs'});
+
+
     % generate the openfast simulation input for the specific site
-    for pairnum=1:numel(IM.waveTry)
+    for pairnum=1:numel(combinationsTable.BladePitch)
+        
         % set the Vhub, Hs and Tp from the seastate pairs
-        Vhub = IM.windTry(pairnum);
-        Hs   = IM.waveTry(pairnum);
+        Vhub = combinationsTable.Vhub(pairnum);
+        Hs   = combinationsTable.Hs(pairnum);
+        BladePitch = combinationsTable.BladePitch(pairnum);
 
         for nseed=1:numel(seedpool)
             seed = seedpool(nseed);
@@ -68,9 +78,9 @@ for sitenum = 2 %height(designTable) %loop through sites
 
             % file naming
             site_name               = designTable.Name{sitenum};
-            env_info                = ['_Vhub_' num2str(Vhub) '_Hs_' num2str(Hs)...
-                                       '_Tp_' num2str(Tp) '_depth_' num2str(waterdepth) '_seed_'...
-                                       num2str(seed)];
+            env_info                = ['_Vhub_'      num2str(Vhub) ...
+                                       '_Hs_'        num2str(Hs) ... 
+                                       '_seed_'      num2str(seed)];
             env_info_wind_only      = ['_Vhub_' num2str(Vhub) '_seednum_' num2str(seed)];
             SubDyn.FileName         = [site_name env_info '.SubDyn.Inp'];
             HydroDyn.FileName       = [site_name env_info '.HydroDyn.Inp'];
@@ -78,10 +88,9 @@ for sitenum = 2 %height(designTable) %loop through sites
             ServoDyn.FileName       = [site_name env_info '.ServoDyn.Inp'];
             ElastoDyn.FileName      = [site_name env_info '.ElastoDyn.Inp'];
             TurbSim.FileName        = ['Turbsim' ...
-                                       env_info_wind_only '_tasknum_' ...
-                                       num2str(runIndex) '.Turbsim.Inp'];
+                                       env_info_wind_only '.Turbsim.Inp'];
             InflowWind.FileName     = [site_name env_info '.Inflow.Inp'];
-            fst.FileName            = [site_name env_info '_tasknum_' num2str(runIndex) '.fst'];
+            fst.FileName            = [site_name env_info '.fst'];
 
             % setup SubDyn input file
             SubDyn.Mudline_loc          = waterdepth;
@@ -118,7 +127,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             writeAeroDyn_v352(AeroDyn);
 
             % setup ServoDyn input file
-            ServoDyn.DLL_FileName = 'IEA-15-240-RWT/libdiscon.so';
+            ServoDyn.DLL_FileName = '/Users/macbook/miniconda3/envs/openfast_seastate/lib/libdiscon.dylib';
             writeServoDyn_v352(ServoDyn);
 
             % setup ElastoDyn input file
@@ -139,7 +148,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             InflowWind.WindType         = 3;
             InflowWind.PropagationDir   = winddir;
             InflowWind.HWindSpeed       = Vhub;
-            InflowWind.FileName_BTS     = [TurbSim.FileName(1:end-4) '.bts'];
+            InflowWind.FileName_BTS     = ['../all_bts/' TurbSim.FileName(1:end-4) '.bts'];
             writeInflowWind_v352(InflowWind);
 
             % setup the OpenFast .fst file
@@ -179,22 +188,8 @@ for sitenum = 2 %height(designTable) %loop through sites
             summary_openFast(pairnum).TurbSim    = TurbSim;
             summary_openFast(pairnum).fst        = fst;
 
-            % create .sh file if mod runIndex 1000 == 0 
-            if mod(runIndex,1000) == 0
-                copy_turbsim_sh(1000,runIndex)
-                copy_openfast_sh(1000,runIndex)
-            end
         end
     end
-    modrunIndex = mod(runIndex,1000);
-    copy_turbsim_sh(modrunIndex,(runIndex))
-    copy_openfast_sh(modrunIndex,(runIndex))
-    cd ../
-    
-    FST_info(sitenum).SiteName = site_name;
-    FST_info(sitenum).summary = summary_openFast;
-    % go out from site folder to exit the creation
-
 end
 
-save('FST_info.mat', 'FST_info')
+fprintf('FINISH!!!!')
