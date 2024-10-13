@@ -45,6 +45,7 @@ function prepare_openfast_tasks_array(numCores)
     fprintf(fid, 'fstFiles = textscan(fileID, ''%%s''); fclose(fileID); ');
     fprintf(fid, 'parpool(%d); ', numCores);
     fprintf(fid, 'parfor i = $startIdx:$endIdx, ');
+    fprintf(fid, "system('conda activate openfast_stable)");
     fprintf(fid, 'system(sprintf(''openfast %%s'', fstFiles{1}{i})); end; exit;"\n');
     
     fclose(fid);

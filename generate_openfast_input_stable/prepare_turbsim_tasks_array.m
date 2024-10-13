@@ -45,6 +45,7 @@ function prepare_turbsim_tasks_array(numCores)
     fprintf(fid, 'turbsimFiles = textscan(fileID, ''%%s''); fclose(fileID); ');
     fprintf(fid, 'parpool(%d); ', numCores);
     fprintf(fid, 'parfor i = $startIdx:$endIdx, ');
+    fprintf(fid, "system('conda activate openfast_stable)");
     fprintf(fid, 'system(sprintf(''turbsim %%s'', turbsimFiles{1}{i})); end; exit;"\n');
     
     fclose(fid);
