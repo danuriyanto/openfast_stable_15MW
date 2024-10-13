@@ -36,13 +36,13 @@ for sitenum = 2 %height(designTable) %loop through sites
     Vhub_array       = [10.59];
     Hs_array         = ones(size(Vhub_array)) * 0.01;
 
-    [BP, VH, HS] = ndgrid(Vhub_array, Hs_array);
-    combinations = [BP(:), VH(:), HS(:)];
+    [VH, HS] = ndgrid(Vhub_array, Hs_array);
+    combinations = [VH(:), HS(:)];
     combinationsTable = array2table(combinations, 'VariableNames', {'Vhub', 'Hs'});
 
 
     % generate the openfast simulation input for the specific site
-    for pairnum=1:numel(combinationsTable.BladePitch)
+    for pairnum=1:numel(combinationsTable.Hs)
         
         % set the Vhub, Hs and Tp from the seastate pairs
         Vhub = combinationsTable.Vhub(pairnum);
