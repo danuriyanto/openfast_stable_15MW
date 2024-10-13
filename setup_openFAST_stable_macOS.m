@@ -101,7 +101,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             SubDyn.Diameter_Interface   = diameter_interface;
             SubDyn.SSI_File             = ssiFileLookup(site_name);
             SubDyn.env_info             = env_info;
-            writeSubDyn_v352_stable(SubDyn);
+            writeSubDyn_stable(SubDyn);
 
             % setup HydroDyn input file
             HydroDyn.WaterDepth         = waterdepth;
@@ -119,7 +119,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             HydroDyn.WaveSeed           = seed;
             HydroDyn.CurrMod            = 0;
             HydroDyn.CurrSSV0           = 0;
-            writeHydroDyn_v352_stable(HydroDyn);
+            writeHydroDyn_stable(HydroDyn);
 
             % setup AeroDyn input file
             AeroDyn.WakeMod   = 0;
@@ -128,7 +128,7 @@ for sitenum = 2 %height(designTable) %loop through sites
 
             % setup ServoDyn input file
             ServoDyn.DLL_FileName = '/Users/macbook/miniconda3/envs/openfast_seastate/lib/libdiscon.dylib';
-            writeServoDyn_v352(ServoDyn);
+            writeServoDyn_stable(ServoDyn);
 
             % setup ElastoDyn input file
             ElastoDyn.NacYaw    = 0; % nacelle yaw angle
@@ -136,20 +136,20 @@ for sitenum = 2 %height(designTable) %loop through sites
             ElastoDyn.RotSpeed  = 0; % initial rotor speed
             ElastoDyn.Azimuth   = 0;
             ElastoDyn.GenDOF    = 'True'; % True = idling, False = fixed
-            writeElastoDyn_v352(ElastoDyn);
+            writeElastoDyn_stable(ElastoDyn);
 
             % setup Turbsim simulation
             TurbSim.RandSeed1    = seed;
             TurbSim.AnalysisTime = simdur;
             TurbSim.Vhub         = Vhub;
-            writeTurbSim_v352(TurbSim);
+            writeTurbSim_stable(TurbSim);
 
             % setup inflowwind input file
             InflowWind.WindType         = 3;
             InflowWind.PropagationDir   = winddir;
             InflowWind.HWindSpeed       = Vhub;
             InflowWind.FileName_BTS     = ['../all_bts/' TurbSim.FileName(1:end-4) '.bts'];
-            writeInflowWind_v352(InflowWind);
+            writeInflowWind_stable(InflowWind);
 
             % setup the OpenFast .fst file
             fst.echo        = 'True';
@@ -171,8 +171,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             fst.SubFile     = SubDyn.FileName;    % Subdyn input file
             fst.InflowFile  = InflowWind.FileName; %inflow wind input file
             fst.FolderName  = foldername;
-            writeFST_v352_stable(fst);
-
+            writeFST_stable(fst);
 
             % save all the fst properties in the summary struct
             summary_openFast(pairnum).sitename   = site_name;
@@ -187,7 +186,6 @@ for sitenum = 2 %height(designTable) %loop through sites
             summary_openFast(pairnum).InflowWind = InflowWind;
             summary_openFast(pairnum).TurbSim    = TurbSim;
             summary_openFast(pairnum).fst        = fst;
-
         end
     end
 end
