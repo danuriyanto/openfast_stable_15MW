@@ -144,7 +144,7 @@ for sitenum = 2 %height(designTable) %loop through sites
             InflowWind.WindType         = 3;
             InflowWind.PropagationDir   = winddir;
             InflowWind.HWindSpeed       = Vhub;
-            Inflowind.FileName_BTS     = ['../all_bts/' TurbSim.FileName(1:end-4) '.bts'];
+            InflowWind.FileName_BTS     = ['../all_bts/' TurbSim.FileName(1:end-4) '.bts'];
             writeInflowWind_stable(InflowWind);
 
             % setup the OpenFast .fst file
