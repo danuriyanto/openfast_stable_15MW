@@ -1,4 +1,4 @@
-function writeElastoDyn_v352(ElastoDyn)
+function writeElastoDyn_stable(ElastoDyn)
  A(1,1) = {'------- ELASTODYN v1.03.* INPUT FILE -------------------------------------------	'};
 A(end+1,1) = {['IEA 15 MW offshore reference model monopile configuration	']};
 A(end+1,1) = {['---------------------- SIMULATION CONTROL --------------------------------------	']};

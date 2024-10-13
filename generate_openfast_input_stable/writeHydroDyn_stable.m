@@ -1,4 +1,4 @@
-function writeHydroDyn_v352_stable(HydroDyn)
+function writeHydroDyn_stable(HydroDyn)
 C(1,1) = {['	------- HydroDyn v2.03.* Input File --------------------------------------------	']};
 C(end+1,1) = {['	IEA 15 MW Hydrodyn Input.	']};
 C(end+1,1) = {['	True            Echo           - Echo the input file data (flag)	']};

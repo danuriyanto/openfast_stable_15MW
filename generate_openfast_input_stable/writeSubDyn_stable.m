@@ -1,4 +1,4 @@
-function writeSubDyn_v352_stable(SubDyn)
+function writeSubDyn_stable(SubDyn)
 C(1,1) = {['----------- SubDyn v1.01.x MultiMember Support Structure Input File ------------	']};
 C(end+1,1) = {['IEA 15 MW offshore reference model monopile configuration	']};
 C(end+1,1) = {['-------------------------- SIMULATION CONTROL ---------------------------------	']};

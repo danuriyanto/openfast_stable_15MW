@@ -1,10 +1,10 @@
-function writeInflowWind_v352(InflowWind)
+function writeInflowWind_stable(InflowWind)
     K(1,1) = {'	------- InflowWind v3.01.* INPUT FILE -------------------------------------------------------------------------	'};
 K(end+1,1) = {['IEA 15 MW Offshore Reference Turbine	']};
 K(end+1,1) = {['---------------------------------------------------------------------------------------------------------------	']};
 K(end+1,1) = {['False Echo - Echo input data to <RootName>.ech (flag)	']};
 K(end+1,1) = {[num2str(InflowWind.WindType,0) ' WindType - switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User defined; 7=native Bladed FF)	']};
-K(end+1,1) = {[num2str(InflowWind.PropagationDir,1) '0.0 PropagationDir - Direction of wind propagation (meteoroligical rotation from aligned with X (positive rotates towards -Y) -- degrees)	']};
+K(end+1,1) = {[num2str(InflowWind.PropagationDir) ' PropagationDir - Direction of wind propagation (meteoroligical rotation from aligned with X (positive rotates towards -Y) -- degrees)	']};
 K(end+1,1) = {['0.0 VFlowAng - Upflow angle (degrees) (not used for native Bladed format WindType=7)	']};
 K(end+1,1) = {['False VelInterpCubic - Use cubic interpolation for velocity in time (false=linear, true=cubic) [Used with WindType=2,3,4,5,7]	']};
 K(end+1,1) = {['1 NWindVel - Number of points to output the wind velocity (0 to 9)	']};

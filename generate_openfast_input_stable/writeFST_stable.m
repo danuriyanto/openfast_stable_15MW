@@ -1,4 +1,4 @@
-function writeFST_v352_stable(fst)
+function writeFST_stable(fst)
 
     C(1,1) = {'	------- OpenFAST INPUT FILE -------------------------------------------	'};
 C(end+1,1) = {['IEA 15 MW offshore reference model monopile configuration ' fst.env_info]};

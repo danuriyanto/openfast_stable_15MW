@@ -1,4 +1,4 @@
-function writeAeroDyn_v352(AeroDyn)
+function writeAeroDyn_stable(AeroDyn)
 
 C(1,1) = {['	------- AERODYN v15.03.* INPUT FILE ------------------------------------------------	']};
 C(end+1,1) = {['IEA 15 MW Offshore Reference Turbine ']};

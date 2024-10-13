@@ -1,4 +1,4 @@
-function writeServoDyn_v352(ServoDyn)
+function writeServoDyn_stable(ServoDyn)
 
 C(1,1) = {['	------- SERVODYN v1.05.* INPUT FILE --------------------------------------------	']};
 C(end+1,1) = {['IEA 15 MW offshore reference model monopile configuration	']};
